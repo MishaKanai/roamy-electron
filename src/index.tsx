@@ -18,6 +18,7 @@ import querystring from "querystring";
 import Draw from "@excalidraw/excalidraw";
 
 const remote = require("electron").remote;
+const isDev = require("electron-is-dev");
 const path = require("path");
 
 function createTraceWindow() {
@@ -34,7 +35,6 @@ function createTraceWindow() {
       preload: path.join(__dirname, "preload.js"),
     },
   });
-  let isDev = false;
   const appPath = remote.app.getAppPath();
   alert(appPath);
   win.loadURL(
