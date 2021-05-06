@@ -37,6 +37,7 @@ const { forwardToRenderer, triggerAlias, replayActionMain, } = require('electron
 const { createStore, applyMiddleware }  = require('redux');
 
 const { default: documentsReducer } = require('roamy/lib/SlateGraph/store/reducer');
+const { default: drawingsReducer } = require('roamy/lib/Excalidraw/store/reducer');
 const { combineReducers } = require('redux');
 
 
@@ -49,9 +50,15 @@ const _rootReducer = combineReducers({
   },
   documents: (state, action) => {
     if (action.type === 'LOAD_DIR') {
-      return action.payload.fileContents
+      return action.payload.fileContents.documents
     }
     return documentsReducer(state, action)
+  },
+  drawings: (state, action) => {
+    if (action.type === 'LOAD_DIR') {
+      return action.payload.fileContents.drawings
+    }
+    return drawingsReducer(state, action)
   }
 })
 const rootReducer = (state, _action) => {
@@ -63,10 +70,11 @@ const rootReducer = (state, _action) => {
 }
 
 let initialState = initialFile ? (() => {
-  const documents =  fs.readFileSync(initialFile, { encoding: 'utf-8'})
+  const serialized =  fs.readFileSync(initialFile, { encoding: 'utf-8'})
   return {
     dataLocation: initialFile,
-    documents: documents ? JSON.parse(documents) : {}
+    documents: serialized?.documents ? JSON.parse(serialized.documents) : {},
+    drawings: serialized?.drawings ? JSON.parse(serialized.drawings) : {}
   }
 })() : undefined;
 const store = createStore(
@@ -86,7 +94,12 @@ const writeFile = debounce(() => {
   const state = store.getState()
   console.log(state);
   if (state.dataLocation) {
-    fs.writeFileSync(state.dataLocation, JSON.stringify(state.documents ?? {}, null, 1));
+    const { drawings = {}, documents = {} } = state;
+    const serialize = {
+      documents,
+      drawings
+    }
+    fs.writeFileSync(state.dataLocation, JSON.stringify(serialize, null, 1));
   }
 }, 1000)
 
