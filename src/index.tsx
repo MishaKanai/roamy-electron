@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import "roamy/src/index.css";
 import "./index.css";
 import { getApp } from "roamy/lib/App";
+import { drawingOptionsContext } from 'roamy/lib/extension/drawingOptionsContext'
 import { Provider } from "react-redux";
 import replayActionRenderer from "electron-redux/dist/helpers/replayActionRenderer";
 import getInitialStateRenderer from "electron-redux/dist/helpers/getInitialStateRenderer";
@@ -15,13 +16,15 @@ import { LandingPage } from "./landingPage/components/LandingPage";
 import createRootReducer from "./store/rootReducer";
 import { routerMiddleware } from "connected-react-router";
 import querystring from "querystring";
-import Draw from "@excalidraw/excalidraw";
+import IconButton from '@material-ui/core/IconButton';
+import OpenInNewIcon from '@material-ui/icons/OpenInNew';
+import ConnectedDrawing from "./ConnectedDrawing";
 
 const remote = require("electron").remote;
 const isDev = require("electron-is-dev");
 const path = require("path");
 
-function createTraceWindow() {
+function createTraceWindow(drawingId: string) {
   const win = new remote.BrowserWindow({
     width: 800,
     height: 800,
@@ -40,7 +43,7 @@ function createTraceWindow() {
   win.loadURL(
     (isDev
       ? "http://localhost:3000"
-      : `file://${path.join(appPath, "./build/index.html")}`) + "?draw=true"
+      : `file://${path.join(appPath, "./build/index.html")}`) + "?draw=true&drawingId=" + drawingId
   );
   // TODO SET MENU HERE <-
   if (isDev) {
@@ -95,14 +98,7 @@ if (query["?draw"]) {
             Some text here. Maybe filename?
           </div>
           <div style={{ height: "calc(100vh - 60px)" }}>
-            <Draw
-              gridModeEnabled
-              initialData={{
-                appState: {
-                  viewBackgroundColor: "transparent",
-                },
-              }}
-            />
+          <ConnectedDrawing drawingName={query['drawingId'] as string} />
           </div>
           <div
             className="draggable"
@@ -130,7 +126,7 @@ if (query["?draw"]) {
           </pre>
           <button
             onClick={(e) => {
-              createTraceWindow();
+              createTraceWindow('drawing-1');
             }}
           >
             create-draw-window
@@ -144,7 +140,13 @@ if (query["?draw"]) {
                 });
               }}
             /> */}
-            <App />
+            <drawingOptionsContext.Provider value={{ renderDrawingOptions: ({ drawingId }) => {
+                return <IconButton size="small" onClick={() => createTraceWindow(drawingId)}>
+                  <OpenInNewIcon />
+                </IconButton>
+            }}}>
+              <App />
+            </drawingOptionsContext.Provider>
           </div>
         </LandingPage>
       </Provider>
